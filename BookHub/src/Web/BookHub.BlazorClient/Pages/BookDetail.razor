@@ -1,0 +1,12 @@
+@page "/books/{Id:guid}"
+
+<PageTitle>Detail du livre - BookHub</PageTitle>
+
+<a href="/books" class="btn btn-secondary">
+    <i class="bi bi-arrow-left"></i> Retour au catalogue
+</a>
+
+@code {
+    [Parameter]
+    public Guid Id { get; set; }
+}

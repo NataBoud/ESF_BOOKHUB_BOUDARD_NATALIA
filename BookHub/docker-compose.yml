@@ -1,0 +1,104 @@
+version: '3.8'
+
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: bookhub-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_MULTIPLE_DATABASES: bookhub_catalog,bookhub_users,bookhub_loans
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - bookhub-network
+
+  catalog-service:
+    build:
+      context: .
+      dockerfile: src/Services/BookHub.CatalogService/Dockerfile
+    container_name: bookhub-catalog
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=bookhub_catalog;Username=postgres;Password=postgres
+    ports:
+      - "5001:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - bookhub-network
+
+  user-service:
+    build:
+      context: .
+      dockerfile: src/Services/BookHub.UserService/Dockerfile
+    container_name: bookhub-users
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=bookhub_users;Username=postgres;Password=postgres
+      - JwtSettings__SecretKey=BookHubSuperSecretKeyThatIsAtLeast32CharactersLong!
+      - JwtSettings__Issuer=BookHub
+      - JwtSettings__Audience=BookHubUsers
+    ports:
+      - "5002:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - bookhub-network
+
+  loan-service:
+    build:
+      context: .
+      dockerfile: src/Services/BookHub.LoanService/Dockerfile
+    container_name: bookhub-loans
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=bookhub_loans;Username=postgres;Password=postgres
+      - Services__CatalogService=http://catalog-service:8080
+      - Services__UserService=http://user-service:8080
+    ports:
+      - "5003:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - bookhub-network
+
+  blazor-client:
+    build:
+      context: .
+      dockerfile: src/Web/BookHub.BlazorClient/Dockerfile
+    container_name: bookhub-frontend
+    environment:
+      - ApiSettings__CatalogServiceUrl=http://localhost:5001
+      - ApiSettings__UserServiceUrl=http://localhost:5002
+      - ApiSettings__LoanServiceUrl=http://localhost:5003
+    ports:
+      - "8080:80"
+    depends_on:
+      - catalog-service
+      - user-service
+      - loan-service
+    networks:
+      - bookhub-network
+
+networks:
+  bookhub-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

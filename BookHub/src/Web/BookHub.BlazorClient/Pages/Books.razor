@@ -1,0 +1,139 @@
+@page "/books"
+@inject IBookService BookService
+
+<PageTitle>Catalogue - BookHub</PageTitle>
+
+<h1>Catalogue des livres</h1>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="input-group">
+            <input type="text" class="form-control" placeholder="Rechercher un livre..."
+                   @bind="searchTerm" @bind:event="oninput" />
+            <button class="btn btn-outline-primary" @onclick="Search">
+                <i class="bi bi-search"></i> Rechercher
+            </button>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <select class="form-select" @bind="selectedCategory">
+            <option value="">Toutes les catégories</option>
+            @foreach (var category in categories)
+            {
+                <option value="@category">@category</option>
+            }
+        </select>
+    </div>
+</div>
+
+@if (isLoading)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Chargement...</span>
+        </div>
+    </div>
+}
+else if (books == null || !books.Any())
+{
+    <div class="alert alert-info">
+        Aucun livre trouvé.
+    </div>
+}
+else
+{
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4">
+        @foreach (var book in filteredBooks)
+        {
+            <div class="col">
+                <div class="card h-100">
+                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center"
+                         style="height: 200px;">
+                        @if (!string.IsNullOrEmpty(book.CoverImageUrl))
+                        {
+                            <img src="@book.CoverImageUrl" alt="@book.Title"
+                                 class="img-fluid" style="max-height: 100%;" />
+                        }
+                        else
+                        {
+                            <i class="bi bi-book display-1 text-secondary"></i>
+                        }
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">@book.Title</h5>
+                        <p class="card-text text-muted">@book.Author</p>
+                        <p class="card-text">
+                            <small class="text-muted">@book.Category - @book.PublicationYear</small>
+                        </p>
+                        <span class="badge @(book.IsAvailable ? "bg-success" : "bg-danger")">
+                            @(book.IsAvailable ? $"{book.AvailableCopies} disponible(s)" : "Indisponible")
+                        </span>
+                    </div>
+                    <div class="card-footer">
+                        <a href="/books/@book.Id" class="btn btn-primary btn-sm w-100">
+                            <i class="bi bi-eye"></i> Voir détails
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private List<BookDto>? books;
+    private bool isLoading = true;
+    private string searchTerm = string.Empty;
+    private string selectedCategory = string.Empty;
+    private List<string> categories = new();
+
+    private IEnumerable<BookDto> filteredBooks => books?
+        .Where(b => string.IsNullOrEmpty(selectedCategory) || b.Category == selectedCategory)
+        ?? Enumerable.Empty<BookDto>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBooks();
+    }
+
+    private async Task LoadBooks()
+    {
+        isLoading = true;
+        try
+        {
+            books = (await BookService.GetAllBooksAsync()).ToList();
+            categories = books.Select(b => b.Category).Distinct().OrderBy(c => c).ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading books: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task Search()
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            await LoadBooks();
+            return;
+        }
+
+        isLoading = true;
+        try
+        {
+            books = (await BookService.SearchBooksAsync(searchTerm)).ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error searching books: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

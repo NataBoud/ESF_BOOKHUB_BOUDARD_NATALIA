@@ -1,0 +1,13 @@
+@using BookHub.Shared.DTOs
+
+<span class="badge bg-secondary">
+    @Status
+</span>
+
+@code {
+    [Parameter]
+    public LoanStatus Status { get; set; }
+
+    [Parameter]
+    public DateTime DueDate { get; set; }
+}

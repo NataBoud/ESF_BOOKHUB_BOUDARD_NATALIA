@@ -1,0 +1,96 @@
+@page "/login"
+@inject IAuthService AuthService
+@inject AuthStateProvider AuthState
+@inject NavigationManager Navigation
+
+<PageTitle>Connexion - BookHub</PageTitle>
+
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title mb-0">Connexion</h3>
+            </div>
+            <div class="card-body">
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="alert alert-danger">@errorMessage</div>
+                }
+
+                <EditForm Model="loginModel" OnValidSubmit="HandleLogin">
+                    <DataAnnotationsValidator />
+
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <InputText id="email" class="form-control" @bind-Value="loginModel.Email" />
+                        <ValidationMessage For="@(() => loginModel.Email)" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Mot de passe</label>
+                        <InputText id="password" type="password" class="form-control"
+                                   @bind-Value="loginModel.Password" />
+                        <ValidationMessage For="@(() => loginModel.Password)" />
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100" disabled="@isLoading">
+                        @if (isLoading)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                        }
+                        Connexion
+                    </button>
+                </EditForm>
+
+                <hr />
+
+                <p class="text-center mb-0">
+                    Pas encore de compte ?
+                    <a href="/register">Créer un compte</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private LoginModel loginModel = new();
+    private bool isLoading = false;
+    private string? errorMessage;
+
+    private async Task HandleLogin()
+    {
+        isLoading = true;
+        errorMessage = null;
+
+        try
+        {
+            var result = await AuthService.LoginAsync(new LoginDto(loginModel.Email, loginModel.Password));
+
+            if (result != null)
+            {
+                await AuthState.SetUserAsync(result.User, result.Token);
+                Navigation.NavigateTo("/");
+            }
+            else
+            {
+                errorMessage = "Email ou mot de passe incorrect.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Une erreur est survenue. Veuillez réessayer.";
+            Console.WriteLine($"Login error: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private class LoginModel
+    {
+        public string Email { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+    }
+}

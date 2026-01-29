@@ -1,0 +1,12 @@
+@using BookHub.Shared.DTOs
+
+<div class="card h-100">
+    <div class="card-body">
+        <p>Livre : @Book?.Title</p>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public BookDto? Book { get; set; }
+}

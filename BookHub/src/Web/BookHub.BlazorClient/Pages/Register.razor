@@ -1,0 +1,131 @@
+@page "/register"
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>Inscription - BookHub</PageTitle>
+
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title mb-0">Créer un compte</h3>
+            </div>
+            <div class="card-body">
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="alert alert-danger">@errorMessage</div>
+                }
+
+                @if (isSuccess)
+                {
+                    <div class="alert alert-success">
+                        Compte créé avec succès !
+                        <a href="/login">Connectez-vous</a>
+                    </div>
+                }
+                else
+                {
+                    <EditForm Model="registerModel" OnValidSubmit="HandleRegister">
+                        <DataAnnotationsValidator />
+
+                        <div class="mb-3">
+                            <label for="firstName" class="form-label">Prénom</label>
+                            <InputText id="firstName" class="form-control" @bind-Value="registerModel.FirstName" />
+                            <ValidationMessage For="@(() => registerModel.FirstName)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="lastName" class="form-label">Nom</label>
+                            <InputText id="lastName" class="form-control" @bind-Value="registerModel.LastName" />
+                            <ValidationMessage For="@(() => registerModel.LastName)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <InputText id="email" class="form-control" @bind-Value="registerModel.Email" />
+                            <ValidationMessage For="@(() => registerModel.Email)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Mot de passe</label>
+                            <InputText id="password" type="password" class="form-control"
+                                       @bind-Value="registerModel.Password" />
+                            <ValidationMessage For="@(() => registerModel.Password)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="confirmPassword" class="form-label">Confirmer le mot de passe</label>
+                            <InputText id="confirmPassword" type="password" class="form-control"
+                                       @bind-Value="registerModel.ConfirmPassword" />
+                            <ValidationMessage For="@(() => registerModel.ConfirmPassword)" />
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100" disabled="@isLoading">
+                            @if (isLoading)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2"></span>
+                            }
+                            Créer mon compte
+                        </button>
+                    </EditForm>
+
+                    <hr />
+
+                    <p class="text-center mb-0">
+                        Déjà un compte ?
+                        <a href="/login">Se connecter</a>
+                    </p>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private RegisterModel registerModel = new();
+    private bool isLoading = false;
+    private bool isSuccess = false;
+    private string? errorMessage;
+
+    private async Task HandleRegister()
+    {
+        if (registerModel.Password != registerModel.ConfirmPassword)
+        {
+            errorMessage = "Les mots de passe ne correspondent pas.";
+            return;
+        }
+
+        isLoading = true;
+        errorMessage = null;
+
+        try
+        {
+            await AuthService.RegisterAsync(new CreateUserDto(
+                registerModel.Email,
+                registerModel.Password,
+                registerModel.FirstName,
+                registerModel.LastName
+            ));
+
+            isSuccess = true;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Une erreur est survenue. Cet email est peut-être déjà utilisé.";
+            Console.WriteLine($"Register error: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private class RegisterModel
+    {
+        public string FirstName { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+        public string ConfirmPassword { get; set; } = string.Empty;
+    }
+}

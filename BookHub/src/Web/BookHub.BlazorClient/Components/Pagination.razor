@@ -1,0 +1,24 @@
+<nav aria-label="Pagination">
+    <ul class="pagination justify-content-center">
+        <li class="page-item disabled">
+            <a class="page-link">Precedent</a>
+        </li>
+        <li class="page-item active">
+            <a class="page-link">1</a>
+        </li>
+        <li class="page-item disabled">
+            <a class="page-link">Suivant</a>
+        </li>
+    </ul>
+</nav>
+
+@code {
+    [Parameter]
+    public int CurrentPage { get; set; } = 1;
+
+    [Parameter]
+    public int TotalPages { get; set; } = 1;
+
+    [Parameter]
+    public EventCallback<int> OnPageChanged { get; set; }
+}

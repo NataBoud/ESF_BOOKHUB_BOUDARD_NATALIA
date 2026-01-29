@@ -1,0 +1,71 @@
+@*
+    Composant ConfirmDialog - À COMPLÉTER PAR LE CANDIDAT
+
+    Ce composant doit afficher une modal de confirmation Bootstrap :
+    - Titre personnalisable
+    - Message personnalisable
+    - Boutons Annuler et Confirmer
+    - Événements pour les deux actions
+
+    Paramètres :
+    - Title : string - Titre de la modal
+    - Message : string - Message à afficher
+    - ConfirmText : string - Texte du bouton de confirmation
+    - OnConfirm : EventCallback - Événement de confirmation
+    - OnCancel : EventCallback - Événement d'annulation
+*@
+
+@if (IsVisible)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@Title</h5>
+                    <button type="button" class="btn-close" @onclick="Cancel"></button>
+                </div>
+                <div class="modal-body">
+                    <p>@Message</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="Cancel">Annuler</button>
+                    <button type="button" class="btn btn-danger" @onclick="Confirm">@ConfirmText</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string Title { get; set; } = "Confirmation";
+
+    [Parameter]
+    public string Message { get; set; } = "Êtes-vous sûr ?";
+
+    [Parameter]
+    public string ConfirmText { get; set; } = "Confirmer";
+
+    [Parameter]
+    public EventCallback OnConfirm { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+
+    public bool IsVisible { get; private set; }
+
+    public void Show() => IsVisible = true;
+    public void Hide() => IsVisible = false;
+
+    private async Task Confirm()
+    {
+        Hide();
+        await OnConfirm.InvokeAsync();
+    }
+
+    private async Task Cancel()
+    {
+        Hide();
+        await OnCancel.InvokeAsync();
+    }
+}
