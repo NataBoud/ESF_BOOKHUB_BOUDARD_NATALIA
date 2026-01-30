@@ -1,0 +1,28 @@
+# ADR-003 - Utilisation de RabbitMQ pour la communication asynchrone
+
+## Statut
+Accepté
+
+## Contexte
+Certaines actions (notifications, événements métiers) ne doivent pas bloquer
+le traitement principal.
+
+Une communication synchrone aurait créé un fort couplage entre services.
+
+## Décision
+RabbitMQ est utilisé comme broker de messages pour la communication asynchrone,
+notamment pour le NotificationService.
+
+## Alternatives considérées
+- Communication REST synchrone
+- Azure Service Bus / Kafka
+
+## Conséquences
+### Avantages
+- Découplage des services
+- Meilleure résilience
+- Traitement asynchrone
+
+### Inconvénients
+- Infrastructure supplémentaire
+- Complexité de supervision
