@@ -3,6 +3,7 @@
         "start",
         "docs",
         "docker",
-        "data"
+        "data",
+        "services"
     ]
 }
