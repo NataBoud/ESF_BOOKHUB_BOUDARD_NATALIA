@@ -1,6 +1,7 @@
 using BookHub.LoanService.Domain.Entities;
 using BookHub.LoanService.Domain.Ports;
 using BookHub.Shared.DTOs;
+using LoanStatus = BookHub.LoanService.Domain.Entities.LoanStatus;
 
 namespace BookHub.LoanService.Application.Services;
 
@@ -53,17 +54,56 @@ public class LoanService : ILoanService
 
     public async Task<IEnumerable<LoanDto>> GetOverdueLoansAsync(CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        var overdueLoans = await _repository.GetOverdueLoansAsync(cancellationToken);
+        return overdueLoans.Select(MapToDto);
     }
 
     public async Task<LoanDto> CreateLoanAsync(CreateLoanDto dto, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        // Vérifier l'utilisateur via le service utilisateur
+        var user = await _userClient.GetUserAsync(dto.UserId, cancellationToken);
+        if (user == null)
+            throw new InvalidOperationException($"Utilisateur avec ID {dto.UserId} introuvable.");
+
+        // Vérifier le livre via le service catalogue
+        var book = await _catalogClient.GetBookAsync(dto.BookId, cancellationToken);
+        if (book == null)
+            throw new InvalidOperationException($"Livre avec ID {dto.BookId} introuvable.");
+
+        // Vérifier la disponibilité du livre
+        if (book.AvailableCopies <= 0)
+            throw new InvalidOperationException($"Le livre '{book.Title}' n'est pas disponible.");
+
+        // Décrémenter la disponibilité du livre
+        var decremented = await _catalogClient.DecrementAvailabilityAsync(dto.BookId, cancellationToken);
+        if (!decremented)
+            throw new InvalidOperationException("Impossible de réserver le livre pour le moment.");
+
+        // Créer le prêt en utilisant la factory de l'entité Loan
+        var loan = Loan.Create(dto.UserId, dto.BookId, book.Title, user.Email);
+
+        // Sauvegarder le prêt en base
+        await _repository.AddAsync(loan, cancellationToken);
+
+        // Retourner le DTO correspondant
+        return MapToDto(loan);
     }
 
     public async Task<LoanDto?> ReturnLoanAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        var loan = await _repository.GetByIdAsync(id, cancellationToken);
+        if (loan == null || loan.Status != LoanStatus.Active)
+            return null;
+
+        // Utiliser la méthode de l'entité pour retourner le livre et calculer la pénalité
+        loan.Return();
+
+        await _repository.UpdateAsync(loan, cancellationToken);
+
+        // Remettre la disponibilité du livre
+        await _catalogClient.IncrementAvailabilityAsync(loan.BookId, cancellationToken);
+
+        return MapToDto(loan);
     }
 
     private static LoanDto MapToDto(Loan loan) => new(

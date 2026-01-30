@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "BookHub.BlazorClient": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:56633;http://localhost:56635"
+    }
+  }
+}

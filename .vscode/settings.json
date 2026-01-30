@@ -1,5 +1,7 @@
 {
     "conventionalCommits.scopes": [
-        "start"
+        "start",
+        "docs",
+        "docker"
     ]
 }
