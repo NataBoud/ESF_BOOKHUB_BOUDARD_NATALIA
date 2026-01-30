@@ -1,0 +1,58 @@
+{
+    "Routes": [
+        {
+            "DownstreamPathTemplate": "/api/users",
+            "DownstreamScheme": "http",
+            "DownstreamHostAndPorts": [
+                {
+                    "Host": "user-service",
+                    "Port": 8080
+                }
+            ],
+            "UpstreamPathTemplate": "/api/users",
+            "UpstreamHttpMethod": [
+                "GET",
+                "POST",
+                "PUT",
+                "DELETE"
+            ]
+        },
+        {
+            "DownstreamPathTemplate": "/api/books",
+            "DownstreamScheme": "http",
+            "DownstreamHostAndPorts": [
+                {
+                    "Host": "catalog-service",
+                    "Port": 8080
+                }
+            ],
+            "UpstreamPathTemplate": "/api/books",
+            "UpstreamHttpMethod": [
+                "GET",
+                "POST",
+                "PUT",
+                "DELETE"
+            ]
+        },
+        {
+            "DownstreamPathTemplate": "/api/loans",
+            "DownstreamScheme": "http",
+            "DownstreamHostAndPorts": [
+                {
+                    "Host": "loan-service",
+                    "Port": 8080
+                }
+            ],
+            "UpstreamPathTemplate": "/api/loans",
+            "UpstreamHttpMethod": [
+                "GET",
+                "POST",
+                "PUT",
+                "DELETE"
+            ]
+        }
+    ],
+    "GlobalConfiguration": {
+        "BaseUrl": "http://localhost:5167"
+    }
+}

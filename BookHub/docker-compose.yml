@@ -90,15 +90,32 @@ services:
     networks:
       - bookhub-network
 
+  api-gateway:
+    build:
+      context: .
+      dockerfile: src/Services/BookHub.ApiGateway/Dockerfile
+    container_name: bookhub-apigateway
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5167
+    ports:
+      - "5167:5167"   # Expose ApiGateway sur localhost:5167
+    depends_on:
+      - user-service
+      - catalog-service
+      - loan-service
+    networks:
+      - bookhub-network
+
   blazor-client:
     build:
       context: .
       dockerfile: src/Web/BookHub.BlazorClient/Dockerfile
     container_name: bookhub-frontend
     environment:
-      - ApiSettings__CatalogServiceUrl=http://localhost:5001
-      - ApiSettings__UserServiceUrl=http://localhost:5002
-      - ApiSettings__LoanServiceUrl=http://localhost:5003
+      - ApiSettings__CatalogServiceUrl=http://localhost:5167
+      - ApiSettings__UserServiceUrl=http://localhost:5167
+      - ApiSettings__LoanServiceUrl=http://localhost:5167
     ports:
       - "8080:80"
     depends_on:
