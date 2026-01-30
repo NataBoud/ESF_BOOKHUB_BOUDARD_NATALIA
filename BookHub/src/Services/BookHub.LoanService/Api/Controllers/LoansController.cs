@@ -2,6 +2,7 @@ using BookHub.LoanService.Application.Services;
 using BookHub.Shared.DTOs;
 using Microsoft.AspNetCore.Mvc;
 
+
 namespace BookHub.LoanService.Api.Controllers;
 
 [ApiController]
@@ -40,18 +41,32 @@ public class LoansController : ControllerBase
     [HttpGet("overdue")]
     public async Task<ActionResult<IEnumerable<LoanDto>>> GetOverdue(CancellationToken cancellationToken)
     {
-        return StatusCode(501, "Not implemented");
+        var overdueLoans = await _loanService.GetOverdueLoansAsync(cancellationToken);
+        return Ok(overdueLoans);
     }
 
     [HttpPost]
     public async Task<ActionResult<LoanDto>> Create([FromBody] CreateLoanDto dto, CancellationToken cancellationToken)
     {
-        return StatusCode(501, "Not implemented");
+        try
+        {
+            // utilise directement le UserId passé dans le corps de la requête
+            var loan = await _loanService.CreateLoanAsync(dto, cancellationToken);
+
+            return CreatedAtAction(nameof(GetById), new { id = loan.Id }, loan);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 
-    [HttpPut("{id:guid}/return")]
+
+     [HttpPut("{id:guid}/return")]
     public async Task<ActionResult<LoanDto>> Return(Guid id, CancellationToken cancellationToken)
     {
-        return StatusCode(501, "Not implemented");
+        var loan = await _loanService.ReturnLoanAsync(id, cancellationToken);
+        if (loan == null) return NotFound();
+        return Ok(loan);
     }
 }

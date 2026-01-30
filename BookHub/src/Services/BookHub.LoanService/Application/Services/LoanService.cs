@@ -60,34 +60,31 @@ public class LoanService : ILoanService
 
     public async Task<LoanDto> CreateLoanAsync(CreateLoanDto dto, CancellationToken cancellationToken = default)
     {
-        // Vérifier l'utilisateur via le service utilisateur
-        var user = await _userClient.GetUserAsync(dto.UserId, cancellationToken);
-        if (user == null)
-            throw new InvalidOperationException($"Utilisateur avec ID {dto.UserId} introuvable.");
-
-        // Vérifier le livre via le service catalogue
+        // VÃ©rifier le livre via le service catalogue
         var book = await _catalogClient.GetBookAsync(dto.BookId, cancellationToken);
         if (book == null)
             throw new InvalidOperationException($"Livre avec ID {dto.BookId} introuvable.");
 
-        // Vérifier la disponibilité du livre
+        // VÃ©rifier la disponibilitÃ© du livre
         if (book.AvailableCopies <= 0)
             throw new InvalidOperationException($"Le livre '{book.Title}' n'est pas disponible.");
 
-        // Décrémenter la disponibilité du livre
+        // DÃ©crÃ©menter la disponibilitÃ© du livre
         var decremented = await _catalogClient.DecrementAvailabilityAsync(dto.BookId, cancellationToken);
         if (!decremented)
-            throw new InvalidOperationException("Impossible de réserver le livre pour le moment.");
+            throw new InvalidOperationException("Impossible de rÃ©server le livre pour le moment.");
 
-        // Créer le prêt en utilisant la factory de l'entité Loan
-        var loan = Loan.Create(dto.UserId, dto.BookId, book.Title, user.Email);
+        // CrÃ©er le prÃªt en utilisant la factory de l'entitÃ© Loan
+        // On utilise un placeholder pour UserEmail, par exemple l'ID converti en string
+        var loan = Loan.Create(dto.UserId, dto.BookId, book.Title, dto.UserId.ToString());
 
-        // Sauvegarder le prêt en base
+        // Sauvegarder le prÃªt en base
         await _repository.AddAsync(loan, cancellationToken);
 
         // Retourner le DTO correspondant
         return MapToDto(loan);
     }
+
 
     public async Task<LoanDto?> ReturnLoanAsync(Guid id, CancellationToken cancellationToken = default)
     {
@@ -95,12 +92,11 @@ public class LoanService : ILoanService
         if (loan == null || loan.Status != LoanStatus.Active)
             return null;
 
-        // Utiliser la méthode de l'entité pour retourner le livre et calculer la pénalité
         loan.Return();
 
         await _repository.UpdateAsync(loan, cancellationToken);
 
-        // Remettre la disponibilité du livre
+        // Remettre la disponibilite du livre
         await _catalogClient.IncrementAvailabilityAsync(loan.BookId, cancellationToken);
 
         return MapToDto(loan);
