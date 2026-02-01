@@ -6,6 +6,7 @@
         "data",
         "services",
         "UserService",
-        "LoanService"
+        "LoanService",
+        "BlazorClient"
     ]
 }
