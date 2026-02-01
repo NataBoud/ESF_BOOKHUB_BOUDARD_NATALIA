@@ -136,6 +136,7 @@ BookHub/
 
 ### Loan Service (à compléter)
 - `POST /api/loans` - Créer un emprunt
+- `GET /api/loans` - afficher des emprunts
 - `GET /api/loans/{id}` - Détails d'un emprunt
 - `GET /api/loans/user/{userId}` - Emprunts d'un utilisateur
 - `PUT /api/loans/{id}/return` - Retourner un livre

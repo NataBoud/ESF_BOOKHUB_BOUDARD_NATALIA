@@ -13,6 +13,7 @@ public interface ILoanService
     Task<IEnumerable<LoanDto>> GetOverdueLoansAsync(CancellationToken cancellationToken = default);
     Task<LoanDto> CreateLoanAsync(CreateLoanDto dto, CancellationToken cancellationToken = default);
     Task<LoanDto?> ReturnLoanAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<IEnumerable<LoanDto>> GetLoansByBookIdAsync(Guid bookId, CancellationToken cancellationToken = default);
 }
 
 public class LoanService : ILoanService
@@ -66,7 +67,7 @@ public class LoanService : ILoanService
             throw new InvalidOperationException($"Utilisateur avec ID {dto.UserId} introuvable.");
 
         // 2 Vérifier le nombre d'emprunts actifs de l'utilisateur
-        int activeLoans = await _repository.CountActiveLoansByUserAsync(dto.UserId, cancellationToken);
+        int activeLoans = await _repository.GetActiveLoansCountByUserAsync(dto.UserId, cancellationToken);
         if (activeLoans >= 5)
             throw new InvalidOperationException($"L'utilisateur ne peut pas emprunter plus de 5 livres. Actuellement empruntés : {activeLoans}");
 
@@ -80,7 +81,7 @@ public class LoanService : ILoanService
             throw new InvalidOperationException($"Le livre '{book.Title}' n'est pas disponible.");
 
         // 5 Vérifier que le livre n'est pas déjà emprunté activement
-        var activeLoan = await _repository.GetActiveLoanByBookIdAsync(dto.BookId, cancellationToken);
+        var activeLoan = await _repository.GetActiveByBookIdAsync(dto.BookId, cancellationToken);
         if (activeLoan != null)
             throw new InvalidOperationException($"Le livre '{book.Title}' est déjà emprunté.");
 
@@ -114,6 +115,13 @@ public class LoanService : ILoanService
 
         return MapToDto(loan);
     }
+
+    public async Task<IEnumerable<LoanDto>> GetLoansByBookIdAsync(Guid bookId, CancellationToken cancellationToken = default)
+    {
+        var loans = await _repository.GetByBookIdAsync(bookId, cancellationToken);
+        return loans.Select(MapToDto);
+    }
+
 
     private static LoanDto MapToDto(Loan loan) => new(
         loan.Id,

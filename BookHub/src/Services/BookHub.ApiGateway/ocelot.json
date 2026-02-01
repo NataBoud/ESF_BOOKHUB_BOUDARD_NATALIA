@@ -35,6 +35,35 @@
             ]
         },
         {
+            "DownstreamPathTemplate": "/api/books/{id}",
+            "DownstreamScheme": "http",
+            "DownstreamHostAndPorts": [
+                {
+                    "Host": "catalog-service",
+                    "Port": 8080
+                }
+            ],
+            "UpstreamPathTemplate": "/api/books/{id}",
+            "UpstreamHttpMethod": [
+                "GET"
+            ]
+        },
+        {
+            "DownstreamPathTemplate": "/api/loans",
+            "DownstreamScheme": "http",
+            "DownstreamHostAndPorts": [
+                {
+                    "Host": "loan-service",
+                    "Port": 8080
+                }
+            ],
+            "UpstreamPathTemplate": "/api/loans",
+            "UpstreamHttpMethod": [
+                "POST",
+                "GET"
+            ]
+        },
+        {
             "DownstreamPathTemplate": "/api/loans/{everything}",
             "DownstreamScheme": "http",
             "DownstreamHostAndPorts": [
@@ -50,7 +79,22 @@
                 "PUT",
                 "DELETE"
             ]
+        },
+        {
+            "DownstreamPathTemplate": "/api/loans/book/{bookId}",
+            "DownstreamScheme": "http",
+            "DownstreamHostAndPorts": [
+                {
+                    "Host": "loan-service",
+                    "Port": 8080
+                }
+            ],
+            "UpstreamPathTemplate": "/api/loans/book/{bookId}",
+            "UpstreamHttpMethod": [
+                "GET"
+            ]
         }
+      
     ],
     "GlobalConfiguration": {
         "BaseUrl": "http://localhost:5167"

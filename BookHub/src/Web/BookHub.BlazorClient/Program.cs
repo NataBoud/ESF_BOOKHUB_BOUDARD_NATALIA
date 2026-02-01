@@ -14,6 +14,7 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(apiBaseU
 
 builder.Services.AddScoped<IBookService, BookService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<ILoanService, LoanService>();
 
 builder.Services.AddScoped<AuthStateProvider>();
 

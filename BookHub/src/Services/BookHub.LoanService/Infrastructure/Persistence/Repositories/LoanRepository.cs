@@ -75,4 +75,13 @@ public class LoanRepository : ILoanRepository
         await _context.SaveChangesAsync(cancellationToken);
         return loan;
     }
+
+    public async Task<IEnumerable<Loan>> GetByBookIdAsync(Guid bookId, CancellationToken cancellationToken = default)
+    {
+        return await _context.Loans
+            .Where(l => l.BookId == bookId)
+            .OrderByDescending(l => l.LoanDate)
+            .ToListAsync(cancellationToken);
+    }
+
 }

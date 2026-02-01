@@ -69,4 +69,12 @@ public class LoansController : ControllerBase
         if (loan == null) return NotFound();
         return Ok(loan);
     }
+
+    [HttpGet("book/{bookId:guid}")]
+    public async Task<ActionResult<IEnumerable<LoanDto>>> GetByBookId(Guid bookId, CancellationToken cancellationToken)
+    {
+        var loans = await _loanService.GetLoansByBookIdAsync(bookId, cancellationToken);
+        return Ok(loans);
+    }
+
 }

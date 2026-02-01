@@ -13,4 +13,6 @@ public interface ILoanRepository
     Task<int> GetActiveLoansCountByUserAsync(Guid userId, CancellationToken cancellationToken = default);
     Task<Loan> AddAsync(Loan loan, CancellationToken cancellationToken = default);
     Task<Loan> UpdateAsync(Loan loan, CancellationToken cancellationToken = default);
+    Task<IEnumerable<Loan>> GetByBookIdAsync(Guid bookId, CancellationToken cancellationToken = default);
+
 }
