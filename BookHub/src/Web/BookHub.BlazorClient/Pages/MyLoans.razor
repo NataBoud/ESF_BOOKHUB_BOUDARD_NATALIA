@@ -1,8 +1,144 @@
 @page "/my-loans"
 
+@using BookHub.Shared.DTOs
+@inject BookHub.BlazorClient.Services.ILoanService LoanService
+@inject BookHub.BlazorClient.Services.AuthStateProvider AuthProvider
+@using DTOs = BookHub.Shared.DTOs;
+@using BookHub.BlazorClient.Components
+
+@code {
+    private IEnumerable<LoanDto> loans = Enumerable.Empty<LoanDto>();
+    private bool isLoading = true;
+
+    private string? SuccessMessage;
+    private string? WarningMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await AuthProvider.InitializeAsync();
+
+        if (AuthProvider.CurrentUser != null)
+        {
+            loans = await LoanService.GetUserLoansAsync(AuthProvider.CurrentUser.Id);
+        }
+
+        isLoading = false;
+    }
+
+    private async Task ReturnLoan(Guid loanId)
+    {
+        SuccessMessage = null;
+        WarningMessage = null;
+
+        try
+        {
+            var returnedLoan = await LoanService.ReturnLoanAsync(loanId);
+
+            if (returnedLoan != null)
+            {
+                // Mettre à jour la liste localement
+                loans = loans.Select(l => l.Id == loanId ? returnedLoan : l).ToList();
+                SuccessMessage = $"Le livre '{returnedLoan.BookTitle}' a été retourné avec succès !";
+            }
+            else
+            {
+                WarningMessage = "Impossible de retourner ce livre.";
+            }
+        }
+        catch (Exception ex)
+        {
+            WarningMessage = $"Erreur lors du retour : {ex.Message}";
+        }
+    }
+}
+
+
 <PageTitle>Mes Emprunts - BookHub</PageTitle>
 
 <h1>Mes Emprunts</h1>
 
-@code {
+@if (isLoading)
+{
+    <p>Chargement...</p>
 }
+else if (loans == null || !loans.Any())
+{
+    <p>Vous n'avez aucun emprunt pour le moment.</p>
+}
+else
+{
+    <!-- Messages Bootstrap -->
+    @if (!string.IsNullOrEmpty(SuccessMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @SuccessMessage
+            <button type="button" class="btn-close" aria-label="Close" @onclick="() => SuccessMessage = null"></button>
+        </div>
+    }
+    @if (!string.IsNullOrEmpty(WarningMessage))
+    {
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            @WarningMessage
+            <button type="button" class="btn-close" aria-label="Close" @onclick="() => WarningMessage = null"></button>
+        </div>
+    }
+
+    <h3>Emprunts en cours</h3>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Livre</th>
+                <th>Date d'emprunt</th>
+                <th>Échéance</th>
+                <th>Statut</th>
+                <th>Pénalité</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var loan in loans.Where(l => l.Status == DTOs.LoanStatus.Active))
+            {
+                <tr>
+                    <td>@loan.BookTitle</td>
+                    <td>@loan.LoanDate.ToShortDateString()</td>
+                    <td>@loan.DueDate.ToShortDateString()</td>
+                    <td>
+                        <LoanStatusBadge Status="@loan.Status" DueDate="@loan.DueDate" />
+                    </td>
+                    <td>@loan.PenaltyAmount €</td>
+                    <td>
+                        <button class="btn btn-success btn-sm" @onclick="() => ReturnLoan(loan.Id)">
+                            Retourner
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <h3>Historique des emprunts</h3>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Livre</th>
+                <th>Date d'emprunt</th>
+                <th>Date de retour</th>
+                <th>Statut</th>
+                <th>Pénalité</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var loan in loans.Where(l => l.Status != LoanStatus.Active))
+            {
+                <tr>
+                    <td>@loan.BookTitle</td>
+                    <td>@loan.LoanDate.ToShortDateString()</td>
+                    <td>@loan.ReturnDate?.ToShortDateString() ?? "-"</td>
+                    <td>@loan.Status</td>
+                    <td>@loan.PenaltyAmount €</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+

@@ -1,12 +1,167 @@
 @page "/books/{Id:guid}"
 
-<PageTitle>Detail du livre - BookHub</PageTitle>
-
-<a href="/books" class="btn btn-secondary">
-    <i class="bi bi-arrow-left"></i> Retour au catalogue
-</a>
+@using BookHub.Shared.DTOs
+@inject BookHub.BlazorClient.Services.IBookService BookService
+@inject BookHub.BlazorClient.Services.ILoanService LoanService
+@inject BookHub.BlazorClient.Services.AuthStateProvider AuthProvider
+@inject NavigationManager Navigation
 
 @code {
-    [Parameter]
-    public Guid Id { get; set; }
+    [Parameter] public Guid Id { get; set; }
+
+    private BookDto? book;
+    private IEnumerable<LoanDto> loans = Enumerable.Empty<LoanDto>();
+    private bool isAdmin = false;
+    private bool isLoading = true;
+
+    // Messages Bootstrap
+    private string? SuccessMessage;
+    private string? WarningMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await AuthProvider.InitializeAsync();
+
+        // Récupération du livre
+        book = await BookService.GetBookByIdAsync(Id);
+
+        // Vérification du rôle
+        isAdmin = AuthProvider.IsAdmin || AuthProvider.IsLibrarian;
+
+        // Historique des emprunts si admin
+        if (isAdmin && book != null)
+        {
+            loans = await LoanService.GetLoansByBookIdAsync(book.Id);
+        }
+
+        isLoading = false;
+    }
+
+   private async Task BorrowBook()
+    {
+        SuccessMessage = null;
+        WarningMessage = null;
+
+        if (AuthProvider.CurrentUser == null)
+        {
+            RedirectToLogin();
+            return;
+        }
+
+        try
+        {
+            var createLoan = new CreateLoanDto(AuthProvider.CurrentUser.Id, book!.Id);
+            await LoanService.CreateLoanAsync(createLoan);
+
+            // Recharger le livre après emprunt
+            book = await BookService.GetBookByIdAsync(Id);
+            SuccessMessage = $"Le livre '{book.Title}' a été emprunté avec succès !";
+        }
+        catch (ApplicationException ex)
+        {
+            WarningMessage = ex.Message;
+        }
+        catch (Exception ex)
+        {
+            WarningMessage = $"Erreur lors de l'emprunt : {ex.Message}";
+        }
+    }
+
+
+    private void RedirectToLogin()
+    {
+        Navigation.NavigateTo("/login");
+    }
 }
+
+
+<PageTitle>Détail du livre - BookHub</PageTitle>
+
+@if (isLoading)
+{
+    <p>Chargement...</p>
+}
+else if (book == null)
+{
+    <p>Livre introuvable.</p>
+}
+else
+{
+    <div class="card mb-3">
+        @if (!string.IsNullOrEmpty(book.CoverImageUrl))
+        {
+            <img src="@book.CoverImageUrl" alt="@book.Title"
+                 class="img-fluid" style="max-height: 100%;" />
+        }
+        else
+        {
+            <i class="bi bi-book display-1 text-secondary px-4"></i>
+        }
+        <div class="card-body">
+            <h3 class="card-title">@book.Title</h3>
+            <p class="card-text"><strong>Auteur :</strong> @book.Author</p>
+            <p class="card-text"><strong>Année :</strong> @book.PublicationYear</p>
+            <p class="card-text"><strong>Catégorie :</strong> @book.Category</p>
+            <p class="card-text">@book.Description</p>
+            <p class="card-text">
+                <strong>Disponibles :</strong> @book.AvailableCopies / @book.TotalCopies
+            </p>
+
+            <!-- Messages  -->
+            @if (!string.IsNullOrEmpty(SuccessMessage))
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    @SuccessMessage
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+            @if (!string.IsNullOrEmpty(WarningMessage))
+            {
+                <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                    @WarningMessage
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+            @if (AuthProvider.CurrentUser != null)
+            {
+                <button class="btn btn-primary" @onclick="BorrowBook" disabled="@(!book.IsAvailable)">
+                    @if (book.IsAvailable) { <span>Emprunter</span> } 
+                    else { <span>Indisponible</span> }
+                </button>
+            }
+            else
+            {
+                <button class="btn btn-primary" @onclick="RedirectToLogin">Se connecter pour emprunter</button>
+            }
+        </div>
+    </div>
+
+    @if (isAdmin && loans.Any())
+    {
+        <h4>Historique des emprunts</h4>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Utilisateur</th>
+                    <th>Date d'emprunt</th>
+                    <th>Date de retour</th>
+                    <th>Statut</th>
+                    <th>Pénalité</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var loan in loans)
+                {
+                    <tr>
+                        <td>@loan.UserEmail</td>
+                        <td>@loan.LoanDate.ToShortDateString()</td>
+                        <td>@loan.ReturnDate?.ToShortDateString() ?? "-" </td>
+                        <td>@loan.Status</td>
+                        <td>@loan.PenaltyAmount €</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+}
+
