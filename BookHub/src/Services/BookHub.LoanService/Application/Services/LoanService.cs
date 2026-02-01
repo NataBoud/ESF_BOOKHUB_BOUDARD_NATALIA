@@ -60,31 +60,44 @@ public class LoanService : ILoanService
 
     public async Task<LoanDto> CreateLoanAsync(CreateLoanDto dto, CancellationToken cancellationToken = default)
     {
-        // Vérifier le livre via le service catalogue
+        // 1 Vérifier que l'utilisateur existe via le UserService (sécurisé)
+        var user = await _userClient.GetUserAsync(dto.UserId, cancellationToken);
+        if (user == null)
+            throw new InvalidOperationException($"Utilisateur avec ID {dto.UserId} introuvable.");
+
+        // 2 Vérifier le nombre d'emprunts actifs de l'utilisateur
+        int activeLoans = await _repository.CountActiveLoansByUserAsync(dto.UserId, cancellationToken);
+        if (activeLoans >= 5)
+            throw new InvalidOperationException($"L'utilisateur ne peut pas emprunter plus de 5 livres. Actuellement empruntés : {activeLoans}");
+
+        // 3 Vérifier que le livre existe via le CatalogService
         var book = await _catalogClient.GetBookAsync(dto.BookId, cancellationToken);
         if (book == null)
             throw new InvalidOperationException($"Livre avec ID {dto.BookId} introuvable.");
 
-        // Vérifier la disponibilité du livre
+        // 4 Vérifier la disponibilité du livre
         if (book.AvailableCopies <= 0)
             throw new InvalidOperationException($"Le livre '{book.Title}' n'est pas disponible.");
 
-        // Décrémenter la disponibilité du livre
+        // 5 Vérifier que le livre n'est pas déjà emprunté activement
+        var activeLoan = await _repository.GetActiveLoanByBookIdAsync(dto.BookId, cancellationToken);
+        if (activeLoan != null)
+            throw new InvalidOperationException($"Le livre '{book.Title}' est déjà emprunté.");
+
+        // 6 Décrémenter la disponibilité du livre dans le catalogue
         var decremented = await _catalogClient.DecrementAvailabilityAsync(dto.BookId, cancellationToken);
         if (!decremented)
             throw new InvalidOperationException("Impossible de réserver le livre pour le moment.");
 
-        // Créer le prêt en utilisant la factory de l'entité Loan
-        // On utilise un placeholder pour UserEmail, par exemple l'ID converti en string
-        var loan = Loan.Create(dto.UserId, dto.BookId, book.Title, dto.UserId.ToString());
+        // 7 Créer le prêt via la factory de l'entité Loan
+        var loan = Loan.Create(dto.UserId, dto.BookId, book.Title, user.Email);
 
-        // Sauvegarder le prêt en base
+        // 8 Sauvegarder le prêt en base
         await _repository.AddAsync(loan, cancellationToken);
 
-        // Retourner le DTO correspondant
+        // 9 Retourner le DTO correspondant
         return MapToDto(loan);
     }
-
 
     public async Task<LoanDto?> ReturnLoanAsync(Guid id, CancellationToken cancellationToken = default)
     {

@@ -22,6 +22,9 @@ builder.Services.AddDbContext<LoanDbContext>(options =>
 builder.Services.AddScoped<ILoanRepository, LoanRepository>();
 builder.Services.AddScoped<ILoanService, LoanService>();
 
+// Générateur de JWT interne pour les appels inter-services
+builder.Services.AddSingleton<BookHub.LoanService.Infrastructure.Security.InternalJwtTokenGenerator>();
+
 // HttpClients pour microservices
 builder.Services.AddHttpClient<ICatalogServiceClient, CatalogServiceClient>(client =>
 {
@@ -29,10 +32,16 @@ builder.Services.AddHttpClient<ICatalogServiceClient, CatalogServiceClient>(clie
     client.BaseAddress = new Uri("http://catalog-service:8080");
 });
 
+
 builder.Services.AddHttpClient<IUserServiceClient, UserServiceClient>(client =>
 {
-    // Utilisation du nom de service Docker pour le réseau interne
     client.BaseAddress = new Uri("http://user-service:8080");
+})
+// Injection du InternalJwtTokenGenerator dans le constructeur du client
+.AddHttpMessageHandler(sp =>
+{
+    var tokenGenerator = sp.GetRequiredService<BookHub.LoanService.Infrastructure.Security.InternalJwtTokenGenerator>();
+    return new InternalJwtHandler(tokenGenerator);
 });
 
 // Healthchecks

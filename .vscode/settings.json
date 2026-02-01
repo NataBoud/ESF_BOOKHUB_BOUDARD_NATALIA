@@ -4,6 +4,7 @@
         "docs",
         "docker",
         "data",
-        "services"
+        "services",
+        "UserService"
     ]
 }
