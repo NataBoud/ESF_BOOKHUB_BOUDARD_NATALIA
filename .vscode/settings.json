@@ -5,6 +5,7 @@
         "docker",
         "data",
         "services",
-        "UserService"
+        "UserService",
+        "LoanService"
     ]
 }
