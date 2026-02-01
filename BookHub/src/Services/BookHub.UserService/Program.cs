@@ -40,6 +40,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
+// AJOUT : policy pour les appels inter-services (LoanService, CatalogService)
+// Permet à un service interne d'appeler l'API sans être un utilisateur humain
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("InternalService", policy =>
+    {
+        policy.RequireClaim("scope", "internal");
+    });
+});
+
 // Domain Ports -> Infrastructure Adapters
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();

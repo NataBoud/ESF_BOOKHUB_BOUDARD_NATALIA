@@ -25,7 +25,9 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
-    [Authorize]
+    [Authorize(Policy = "InternalService")]
+    // Autorise les appels inter-services (LoanService)
+    // via un JWT technique contenant le claim "scope=internal"
     public async Task<ActionResult<UserDto>> GetById(Guid id, CancellationToken cancellationToken)
     {
         var user = await _userService.GetUserByIdAsync(id, cancellationToken);
