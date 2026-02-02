@@ -11,7 +11,8 @@ public record BookDto(
     string CoverImageUrl,
     bool IsAvailable,
     int TotalCopies,
-    int AvailableCopies
+    int AvailableCopies,
+    int LoanCount = 0 
 );
 
 public record CreateBookDto(

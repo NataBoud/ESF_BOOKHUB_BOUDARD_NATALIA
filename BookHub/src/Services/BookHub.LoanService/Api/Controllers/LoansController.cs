@@ -84,5 +84,11 @@ public class LoansController : ControllerBase
         return Ok(dashboard);
     }
 
+    [HttpGet("popular")]
+    public async Task<ActionResult<IEnumerable<BookDto>>> GetPopularBooks(int limit = 5, CancellationToken cancellationToken = default)
+    {
+        var popularBooks = await _loanService.GetTopBorrowedBooksAsync(limit, cancellationToken);
+        return Ok(popularBooks);
+    }
 
 }

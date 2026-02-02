@@ -15,6 +15,7 @@ public interface ILoanService
     Task<LoanDto?> ReturnLoanAsync(Guid id, CancellationToken cancellationToken = default);
     Task<IEnumerable<LoanDto>> GetLoansByBookIdAsync(Guid bookId, CancellationToken cancellationToken = default);
     Task<AdminDashboardDto> GetAdminDashboardAsync(CancellationToken cancellationToken = default);
+    Task<IEnumerable<BookDto>> GetTopBorrowedBooksAsync(int limit = 5, CancellationToken cancellationToken = default);  
 }
 
 public class LoanService : ILoanService
@@ -129,14 +130,47 @@ public class LoanService : ILoanService
         var activeLoans = await _repository.CountActiveAsync(cancellationToken);
         var overdueLoans = await _repository.CountOverdueAsync(cancellationToken);
 
-        var topBooks = await _repository.GetTopBorrowedBooksAsync(5, cancellationToken);
+        // Récupérer les top books côté repository en tant que tuples (BookId, LoanCount)
+        var topBookIds = await _repository.GetTopBorrowedBookIdsAsync(5, cancellationToken);
+
+        // Compléter les infos BookDto via le CatalogService
+        var topBooks = new List<BookDto>();
+        foreach (var (bookId, loanCount) in topBookIds)
+        {
+            var book = await _catalogClient.GetBookAsync(bookId, cancellationToken);
+            if (book != null)
+            {
+                // Copier l'objet BookDto et ajouter le LoanCount
+                topBooks.Add(book with { LoanCount = loanCount });
+            }
+        }
 
         return new AdminDashboardDto(
-            totalLoans,
-            activeLoans,
-            overdueLoans,
-            topBooks
+            TotalLoans: totalLoans,
+            ActiveLoans: activeLoans,
+            OverdueLoans: overdueLoans,
+            TopBooks: topBooks
         );
+    }
+
+    public async Task<IEnumerable<BookDto>> GetTopBorrowedBooksAsync(int limit = 5, CancellationToken cancellationToken = default)
+    {
+        var topBooksIds = await _repository.GetTopBorrowedBookIdsAsync(limit, cancellationToken);
+
+        var books = new List<BookDto>();
+
+        foreach (var (bookId, loanCount) in topBooksIds)
+        {
+            var book = await _catalogClient.GetBookAsync(bookId, cancellationToken);
+            if (book != null)
+            {
+                // On peut ajouter LoanCount dans le DTO si on veut l'afficher dans admin
+                var bookWithLoanCount = book with { LoanCount = loanCount };
+                books.Add(bookWithLoanCount);
+            }
+        }
+
+        return books;
     }
 
     private static LoanDto MapToDto(Loan loan) => new(

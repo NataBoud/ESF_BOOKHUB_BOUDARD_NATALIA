@@ -106,21 +106,19 @@ public class LoanRepository : ILoanRepository
             cancellationToken);
     }
 
-  public async Task<IEnumerable<TopBookDto>> GetTopBorrowedBooksAsync(int limit, CancellationToken cancellationToken = default)
+    public Task<IEnumerable<(Guid BookId, int LoanCount)>> GetTopBorrowedBookIdsAsync(int limit, CancellationToken cancellationToken = default)
     {
-        var topBooks = _context.Loans
-            .GroupBy(l => new { l.BookId, l.BookTitle })
-            .AsEnumerable() // bascule vers LINQ to Objects
-            .Select(g => new TopBookDto(
-                g.Key.BookId,
-                g.Key.BookTitle,
-                g.Count() // évalué côté client
-            ))
-            .OrderByDescending(b => b.LoanCount)
+        var topBooksInMemory = _context.Loans
+            .GroupBy(l => l.BookId)
+            .Select(g => new { BookId = g.Key, Count = g.Count() })
+            .OrderByDescending(x => x.Count)
             .Take(limit)
+            .AsEnumerable() // bascule en mémoire
+            .Select(x => (x.BookId, x.Count)) // crée les tuples
             .ToList(); 
 
-        return topBooks;
+        // Pas d'await ici car c'est déjà en mémoire
+        return Task.FromResult<IEnumerable<(Guid BookId, int LoanCount)>>(topBooksInMemory);
     }
 
 }
