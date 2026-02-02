@@ -61,4 +61,11 @@ public class LoanService : ILoanService
         var response = await _httpClient.GetFromJsonAsync<IEnumerable<LoanDto>>($"api/loans/book/{bookId}");
         return response ?? Enumerable.Empty<LoanDto>();
     }
+
+    // Méthode pour récupérer les données du tableau de bord admin
+    public async Task<AdminDashboardDto> GetAdminDashboardAsync()
+    {
+        var dashboard = await _httpClient.GetFromJsonAsync<AdminDashboardDto>("api/loans/admin/dashboard");
+        return dashboard ?? new AdminDashboardDto(0, 0, 0, Enumerable.Empty<TopBookDto>());
+    }
 }

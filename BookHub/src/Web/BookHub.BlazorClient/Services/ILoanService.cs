@@ -9,4 +9,5 @@ public interface ILoanService
     Task<LoanDto> CreateLoanAsync(CreateLoanDto createLoanDto);
     Task<LoanDto?> ReturnLoanAsync(Guid loanId);
     Task<IEnumerable<LoanDto>> GetLoansByBookIdAsync(Guid bookId);
+    Task<AdminDashboardDto> GetAdminDashboardAsync();
 }

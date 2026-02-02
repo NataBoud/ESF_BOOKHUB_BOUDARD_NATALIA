@@ -1,43 +1,103 @@
 @page "/admin/dashboard"
 
+@using BookHub.Shared.DTOs
+@inject BookHub.BlazorClient.Services.AuthStateProvider AuthProvider
+@inject BookHub.BlazorClient.Services.ILoanService LoanService
+
+
+@code {
+    private AdminDashboardDto dashboard =
+        new(0, 0, 0, Enumerable.Empty<TopBookDto>());
+
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await AuthProvider.InitializeAsync();
+
+        if (AuthProvider.IsAdmin)
+        {
+            dashboard = await LoanService.GetAdminDashboardAsync();
+        }
+
+        isLoading = false;
+    }
+}
+
+
 <PageTitle>Administration - BookHub</PageTitle>
 
 <h1>Tableau de bord administrateur</h1>
 
-<div class="row mb-4">
-    <div class="col-md-3">
-        <div class="card text-white bg-primary">
-            <div class="card-body">
-                <h5 class="card-title">Livres</h5>
-                <p class="card-text display-6">--</p>
-            </div>
-        </div>
+@if (!AuthProvider.IsAdmin)
+{
+    <div class="alert alert-danger">
+        Accès interdit. Vous devez être administrateur.
     </div>
-    <div class="col-md-3">
-        <div class="card text-white bg-success">
-            <div class="card-body">
-                <h5 class="card-title">Emprunts actifs</h5>
-                <p class="card-text display-6">--</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card text-white bg-danger">
-            <div class="card-body">
-                <h5 class="card-title">En retard</h5>
-                <p class="card-text display-6">--</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card text-white bg-info">
-            <div class="card-body">
-                <h5 class="card-title">Utilisateurs</h5>
-                <p class="card-text display-6">--</p>
-            </div>
-        </div>
-    </div>
-</div>
+    return;
+}
 
-@code {
+@if (isLoading)
+{
+    <p>Chargement des statistiques...</p>
+}
+else
+{
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <h5 class="card-title">Total des emprunts</h5>
+                    <p class="card-text display-6">@dashboard.TotalLoans</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h5 class="card-title">Emprunts actifs</h5>
+                    <p class="card-text display-6">@dashboard.ActiveLoans</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card text-white bg-danger">
+                <div class="card-body">
+                    <h5 class="card-title">En retard</h5>
+                    <p class="card-text display-6">@dashboard.OverdueLoans</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h3>Livres les plus empruntés</h3>
+
+    @if (dashboard.TopBooks.Any())
+    {
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Livre</th>
+                    <th>Nombre d'emprunts</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var book in dashboard.TopBooks)
+                {
+                    <tr>
+                        <td>@book.Title</td>
+                        <td>@book.LoanCount</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <div class="alert alert-info">
+            Aucun emprunt enregistré pour le moment.
+        </div>
+    }
 }
