@@ -17,6 +17,7 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ILoanService, LoanService>();
 
 builder.Services.AddScoped<AuthStateProvider>();
+builder.Services.AddScoped<LoanState>();
 
 builder.Services.AddBlazoredLocalStorage();
 

@@ -105,3 +105,17 @@ Dans cette étape, nous avons sécurisé et finalisé la création des prêts (`
 
 5. **Contrôleur LoanService**  
    - Le endpoint `POST /api/Loans` utilise la méthode mise à jour pour créer un prêt en s’assurant que l’utilisateur et le livre sont valides.
+
+## **7. Aperçu des pages Front**
+
+### Page d'accueil
+![Capture1](./BookHub/assets/Capture1.PNG)
+
+### Catalogue des livres
+![Capture2](./BookHub/assets/Capture2.PNG)
+
+### Détail d’un livre
+![Capture3](./BookHub/assets/Capture3.PNG)
+
+### Mes emprunts
+![Capture4](./BookHub/assets/Capture4.PNG)

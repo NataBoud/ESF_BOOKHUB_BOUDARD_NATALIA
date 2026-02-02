@@ -1,11 +1,12 @@
 @page "/books/{Id:guid}"
 
 @using BookHub.Shared.DTOs
+@using BookHub.BlazorClient.Components
+@inject LoanState LoanState
 @inject BookHub.BlazorClient.Services.IBookService BookService
 @inject BookHub.BlazorClient.Services.ILoanService LoanService
 @inject BookHub.BlazorClient.Services.AuthStateProvider AuthProvider
 @inject NavigationManager Navigation
-@using BookHub.BlazorClient.Components
 
 @code {
     [Parameter] public Guid Id { get; set; }
@@ -38,7 +39,7 @@
         isLoading = false;
     }
 
-   private async Task BorrowBook()
+    private async Task BorrowBook()
     {
         SuccessMessage = null;
         WarningMessage = null;
@@ -48,14 +49,16 @@
             RedirectToLogin();
             return;
         }
-
         try
         {
             var createLoan = new CreateLoanDto(AuthProvider.CurrentUser.Id, book!.Id);
-            await LoanService.CreateLoanAsync(createLoan);
+            var loan = await LoanService.CreateLoanAsync(createLoan);
 
+            // synchroniser le state global 
+            LoanState.AddLoan(loan);
             // Recharger le livre après emprunt
             book = await BookService.GetBookByIdAsync(Id);
+
             SuccessMessage = $"Le livre '{book.Title}' a été emprunté avec succès !";
         }
         catch (ApplicationException ex)
@@ -67,7 +70,6 @@
             WarningMessage = $"Erreur lors de l'emprunt : {ex.Message}";
         }
     }
-
 
     private void RedirectToLogin()
     {

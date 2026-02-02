@@ -84,7 +84,7 @@ else if (loans == null || !loans.Any())
 }
 else
 {
-    <!-- Messages Bootstrap -->
+    <!-- Messages -->
     @if (!string.IsNullOrEmpty(SuccessMessage))
     {
         <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -107,40 +107,53 @@ else
                OnConfirm="ConfirmReturnLoan" />
 
     <h4 class="mt-4">Emprunts en cours</h4>
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Livre</th>
-                <th>Date d'emprunt</th>
-                <th>Échéance</th>
-                <th>Statut</th>
-                <th>Pénalité</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var loan in loans.Where(l => l.Status == DTOs.LoanStatus.Active))
-            {
+
+    @* Vérifie s’il y a des emprunts actifs *@
+    @if (loans.Any(l => l.Status == DTOs.LoanStatus.Active))
+    {
+        <table class="table table-striped">
+            <thead>
                 <tr>
-                    <td>@loan.BookTitle</td>
-                    <td>@loan.LoanDate.ToShortDateString()</td>
-                    <td>@loan.DueDate.ToShortDateString()</td>
-                    <td>
-                        <LoanStatusBadge Status="@loan.Status" DueDate="@loan.DueDate" />
-                    </td>
-                    <td>@loan.PenaltyAmount €</td>
-                    <td>
-                       <button class="btn btn-success btn-sm" @onclick="() => ShowConfirmReturnLoan(loan.Id)">
-                            Retourner
-                        </button>
-                    </td>
+                    <th>Livre</th>
+                    <th>Date d'emprunt</th>
+                    <th>Échéance</th>
+                    <th>Statut</th>
+                    <th>Pénalité</th>
+                    <th>Actions</th>
                 </tr>
-            }
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @foreach (var loan in loans.Where(l => l.Status == DTOs.LoanStatus.Active))
+                {
+                    <tr>
+                        <td>@loan.BookTitle</td>
+                        <td>@loan.LoanDate.ToShortDateString()</td>
+                        <td>@loan.DueDate.ToShortDateString()</td>
+                        <td>
+                            <LoanStatusBadge Status="@loan.Status" DueDate="@loan.DueDate" />
+                        </td>
+                        <td>@loan.PenaltyAmount €</td>
+                        <td>
+                            <button class="btn btn-success btn-sm"
+                                    @onclick="() => ShowConfirmReturnLoan(loan.Id)">
+                                Retourner
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <div class="alert alert-info">
+            Vous n'avez aucun emprunt en cours.
+        </div>
+    }
 
     <h4 class="mt-4">Historique des emprunts</h4>
 
+    @* Vérifie s’il y a des emprunts passés *@
     @if (loans.Any(l => l.Status != DTOs.LoanStatus.Active))
     {
         <table class="table table-striped">
@@ -171,11 +184,10 @@ else
     }
     else
     {
-        <div class="alert alert-warning alert-dismissible fade show" role="alert">
-            Vous n'avez aucun emprunt passé.         
+        <div class="alert alert-info">
+            Vous n'avez aucun emprunt passé.
         </div>
     }
-
 
 }
 
