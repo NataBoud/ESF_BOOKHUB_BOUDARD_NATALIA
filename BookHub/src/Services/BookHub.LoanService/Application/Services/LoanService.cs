@@ -63,44 +63,60 @@ public class LoanService : ILoanService
 
     public async Task<LoanDto> CreateLoanAsync(CreateLoanDto dto, CancellationToken cancellationToken = default)
     {
-        // 1 Vérifier que l'utilisateur existe via le UserService (sécurisé)
+        // Vérifier que l'utilisateur existe
         var user = await _userClient.GetUserAsync(dto.UserId, cancellationToken);
         if (user == null)
-            throw new InvalidOperationException($"Utilisateur avec ID {dto.UserId} introuvable.");
+            throw new InvalidOperationException(
+                $"Utilisateur avec ID {dto.UserId} introuvable."
+            );
 
-        // 2 Vérifier le nombre d'emprunts actifs de l'utilisateur
-        int activeLoans = await _repository.GetActiveLoansCountByUserAsync(dto.UserId, cancellationToken);
+        // Vérifier la limite de prêts utilisateur
+        int activeLoans = await _repository
+            .GetActiveLoansCountByUserAsync(dto.UserId, cancellationToken);
+
         if (activeLoans >= 5)
-            throw new InvalidOperationException($"L'utilisateur ne peut pas emprunter plus de 5 livres. Actuellement empruntés : {activeLoans}");
+            throw new InvalidOperationException(
+                $"L'utilisateur ne peut pas emprunter plus de 5 livres. Actuellement empruntés : {activeLoans}"
+            );
 
-        // 3 Vérifier que le livre existe via le CatalogService
+        // Vérifier que le livre existe
         var book = await _catalogClient.GetBookAsync(dto.BookId, cancellationToken);
         if (book == null)
-            throw new InvalidOperationException($"Livre avec ID {dto.BookId} introuvable.");
+            throw new InvalidOperationException(
+                $"Livre avec ID {dto.BookId} introuvable."
+            );
 
-        // 4 Vérifier la disponibilité du livre
+        // Vérifier si l'utilisateur a déjà emprunté ce livre
+        var userActiveLoan = await _repository
+            .GetActiveLoanByUserAndBookAsync(dto.UserId, dto.BookId, cancellationToken);
+
+        if (userActiveLoan != null)
+            throw new InvalidOperationException(
+                $"Vous avez déjà emprunté le livre '{book.Title}'."
+            );
+
+        // Vérifier la disponibilité (SOURCE UNIQUE : Catalog)
         if (book.AvailableCopies <= 0)
-            throw new InvalidOperationException($"Le livre '{book.Title}' n'est pas disponible.");
+            throw new InvalidOperationException(
+                $"Le livre '{book.Title}' n'est pas disponible pour l'emprunt."
+            );
 
-        // 5 Vérifier que le livre n'est pas déjà emprunté activement
-        var activeLoan = await _repository.GetActiveByBookIdAsync(dto.BookId, cancellationToken);
-        if (activeLoan != null)
-            throw new InvalidOperationException($"Le livre '{book.Title}' est déjà emprunté.");
+        // Décrémenter la disponibilité dans le CatalogService
+        var decremented = await _catalogClient
+            .DecrementAvailabilityAsync(dto.BookId, cancellationToken);
 
-        // 6 Décrémenter la disponibilité du livre dans le catalogue
-        var decremented = await _catalogClient.DecrementAvailabilityAsync(dto.BookId, cancellationToken);
         if (!decremented)
-            throw new InvalidOperationException("Impossible de réserver le livre pour le moment.");
+            throw new InvalidOperationException(
+                "Impossible de réserver le livre pour le moment."
+            );
 
-        // 7 Créer le prêt via la factory de l'entité Loan
+        // Créer le prêt
         var loan = Loan.Create(dto.UserId, dto.BookId, book.Title, user.Email);
-
-        // 8 Sauvegarder le prêt en base
         await _repository.AddAsync(loan, cancellationToken);
 
-        // 9 Retourner le DTO correspondant
         return MapToDto(loan);
     }
+
 
     public async Task<LoanDto?> ReturnLoanAsync(Guid id, CancellationToken cancellationToken = default)
     {

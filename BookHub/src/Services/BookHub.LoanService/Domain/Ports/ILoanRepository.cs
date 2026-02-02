@@ -18,5 +18,7 @@ public interface ILoanRepository
     Task<int> CountAllAsync(CancellationToken cancellationToken = default);
     Task<int> CountActiveAsync(CancellationToken cancellationToken = default);
     Task<int> CountOverdueAsync(CancellationToken cancellationToken = default);
-   Task<IEnumerable<(Guid BookId, int LoanCount)>> GetTopBorrowedBookIdsAsync(int limit, CancellationToken cancellationToken = default);
+    Task<IEnumerable<(Guid BookId, int LoanCount)>> GetTopBorrowedBookIdsAsync(int limit, CancellationToken cancellationToken = default);
+    Task<Loan?> GetActiveLoanByUserAndBookAsync(Guid userId, Guid bookId, CancellationToken cancellationToken = default);
 }
+

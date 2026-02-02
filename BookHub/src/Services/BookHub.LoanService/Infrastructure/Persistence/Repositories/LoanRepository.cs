@@ -60,6 +60,12 @@ public class LoanRepository : ILoanRepository
             .FirstOrDefaultAsync(l => l.BookId == bookId && l.Status == DomainLoanStatus.Active, cancellationToken);
     }
 
+    public async Task<Loan?> GetActiveLoanByUserAndBookAsync(Guid userId, Guid bookId, CancellationToken cancellationToken = default)
+    {
+        return await _context.Loans
+            .FirstOrDefaultAsync(l => l.BookId == bookId && l.UserId == userId && l.Status == DomainLoanStatus.Active, cancellationToken);
+    }
+
     public async Task<int> GetActiveLoansCountByUserAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         return await _context.Loans
