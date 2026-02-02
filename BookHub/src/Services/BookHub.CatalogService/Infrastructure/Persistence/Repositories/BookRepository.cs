@@ -20,6 +20,11 @@ public class BookRepository : IBookRepository
             .ToListAsync(cancellationToken);
     }
 
+    public IQueryable<Book> GetAllQuery()
+    {
+        return _context.Books.AsQueryable().OrderBy(b => b.Title);
+    }
+
     public async Task<Book?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _context.Books.FindAsync(new object[] { id }, cancellationToken);

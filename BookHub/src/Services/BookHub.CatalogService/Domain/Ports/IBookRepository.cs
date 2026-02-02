@@ -1,4 +1,5 @@
 using BookHub.CatalogService.Domain.Entities;
+using System.Linq;
 
 namespace BookHub.CatalogService.Domain.Ports;
 
@@ -12,4 +13,5 @@ public interface IBookRepository
     Task<Book> AddAsync(Book book, CancellationToken cancellationToken = default);
     Task<Book> UpdateAsync(Book book, CancellationToken cancellationToken = default);
     Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default);
+    IQueryable<Book> GetAllQuery();
 }

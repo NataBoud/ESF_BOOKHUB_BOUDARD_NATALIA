@@ -1,12 +1,13 @@
 using BookHub.CatalogService.Domain.Entities;
 using BookHub.CatalogService.Domain.Ports;
 using BookHub.Shared.DTOs;
+using Microsoft.EntityFrameworkCore;
 
 namespace BookHub.CatalogService.Application.Services;
 
 public interface IBookService
 {
-    Task<IEnumerable<BookDto>> GetAllBooksAsync(CancellationToken cancellationToken = default);
+    Task<(IEnumerable<BookDto> Items, int TotalCount)> GetPagedBooksAsync( int page = 1, int pageSize = 10, CancellationToken cancellationToken = default);
     Task<BookDto?> GetBookByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<IEnumerable<BookDto>> SearchBooksAsync(string searchTerm, CancellationToken cancellationToken = default);
     Task<IEnumerable<BookDto>> GetBooksByCategoryAsync(string category, CancellationToken cancellationToken = default);
@@ -28,10 +29,19 @@ public class BookService : IBookService
         _logger = logger;
     }
 
-    public async Task<IEnumerable<BookDto>> GetAllBooksAsync(CancellationToken cancellationToken = default)
+    public async Task<(IEnumerable<BookDto> Items, int TotalCount)> GetPagedBooksAsync( int page = 1, int pageSize = 10, CancellationToken cancellationToken = default)
     {
-        var books = await _repository.GetAllAsync(cancellationToken);
-        return books.Select(MapToDto);
+        var query = _repository.GetAllQuery(); // IQueryable<Book>
+
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        var items = await query
+            .OrderBy(b => b.Title)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return (items.Select(MapToDto), totalCount);
     }
 
     public async Task<BookDto?> GetBookByIdAsync(Guid id, CancellationToken cancellationToken = default)
