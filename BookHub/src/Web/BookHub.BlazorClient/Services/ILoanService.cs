@@ -10,4 +10,5 @@ public interface ILoanService
     Task<LoanDto?> ReturnLoanAsync(Guid loanId);
     Task<IEnumerable<LoanDto>> GetLoansByBookIdAsync(Guid bookId);
     Task<AdminDashboardDto> GetAdminDashboardAsync();
+    Task<IEnumerable<BookDto>> GetPopularBooksAsync(int limit = 5);
 }

@@ -1,4 +1,15 @@
 @page "/"
+@inject ILoanService LoanService
+@using BookHub.BlazorClient.Components
+
+@code {
+    private IEnumerable<BookDto>? popularBooks;
+
+    protected override async Task OnInitializedAsync()
+    {
+        popularBooks = await LoanService.GetPopularBooksAsync(5);
+    }
+}
 
 <PageTitle>BookHub - Accueil</PageTitle>
 
@@ -46,7 +57,20 @@
     <div class="col-12">
         <h2>Livres populaires</h2>
         <hr />
-        <!-- TODO: Afficher les livres les plus empruntés -->
-        <p class="text-muted">Fonctionnalité à venir...</p>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4">
+            @if (popularBooks == null)
+            {
+                <p>Chargement...</p>
+            }
+            else
+            {
+                @foreach (var book in popularBooks)
+                {
+                    <div class="col">
+                        <BookCard Book="book" />
+                    </div>
+                }
+            }
+        </div>
     </div>
 </div>

@@ -66,6 +66,13 @@ public class LoanService : ILoanService
     public async Task<AdminDashboardDto> GetAdminDashboardAsync()
     {
         var dashboard = await _httpClient.GetFromJsonAsync<AdminDashboardDto>("api/loans/admin/dashboard");
-        return dashboard ?? new AdminDashboardDto(0, 0, 0, Enumerable.Empty<TopBookDto>());
+        return dashboard ?? new AdminDashboardDto(0, 0, 0, Enumerable.Empty<BookDto>());
+    }
+
+    // Méthode pour récupérer les livres les plus populaires
+    public async Task<IEnumerable<BookDto>> GetPopularBooksAsync(int limit = 5)
+    {
+        var response = await _httpClient.GetFromJsonAsync<IEnumerable<BookDto>>($"api/loans/popular?limit={limit}");
+        return response ?? Enumerable.Empty<BookDto>();
     }
 }
