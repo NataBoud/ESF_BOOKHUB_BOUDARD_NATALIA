@@ -13,6 +13,9 @@
     private string? SuccessMessage;
     private string? WarningMessage;
 
+    private ConfirmDialog? confirmDialog;
+    private Guid loanIdToReturn;
+
     protected override async Task OnInitializedAsync()
     {
         await AuthProvider.InitializeAsync();
@@ -50,8 +53,22 @@
             WarningMessage = $"Erreur lors du retour : {ex.Message}";
         }
     }
-}
 
+    private void ShowConfirmReturnLoan(Guid loanId)
+    {
+        loanIdToReturn = loanId;
+        confirmDialog?.Show();
+    }
+
+    private async Task ConfirmReturnLoan()
+    {
+        if (loanIdToReturn != Guid.Empty)
+        {
+            await ReturnLoan(loanIdToReturn);
+            loanIdToReturn = Guid.Empty;
+        }
+    }
+}
 
 <PageTitle>Mes Emprunts - BookHub</PageTitle>
 
@@ -83,6 +100,12 @@ else
         </div>
     }
 
+    <ConfirmDialog @ref="confirmDialog"
+               Title="Retour de livre"
+               Message="Êtes-vous sûr de vouloir retourner ce livre ?"
+               ConfirmText="Retourner"
+               OnConfirm="ConfirmReturnLoan" />
+
     <h4 class="mt-4">Emprunts en cours</h4>
     <table class="table table-striped">
         <thead>
@@ -107,7 +130,7 @@ else
                     </td>
                     <td>@loan.PenaltyAmount €</td>
                     <td>
-                        <button class="btn btn-success btn-sm" @onclick="() => ReturnLoan(loan.Id)">
+                       <button class="btn btn-success btn-sm" @onclick="() => ShowConfirmReturnLoan(loan.Id)">
                             Retourner
                         </button>
                     </td>
