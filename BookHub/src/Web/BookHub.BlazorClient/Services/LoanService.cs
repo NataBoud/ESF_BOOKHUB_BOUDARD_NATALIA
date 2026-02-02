@@ -47,7 +47,7 @@ public class LoanService : ILoanService
 
     public async Task<LoanDto?> ReturnLoanAsync(Guid loanId)
     {
-        var response = await _httpClient.PostAsync($"api/loans/{loanId}/return", null);
+        var response = await _httpClient.PutAsync($"api/loans/{loanId}/return", null);
 
         if (!response.IsSuccessStatusCode)
             return null;

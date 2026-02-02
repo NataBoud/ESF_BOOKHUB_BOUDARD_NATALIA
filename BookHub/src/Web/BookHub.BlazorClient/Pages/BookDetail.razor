@@ -5,6 +5,7 @@
 @inject BookHub.BlazorClient.Services.ILoanService LoanService
 @inject BookHub.BlazorClient.Services.AuthStateProvider AuthProvider
 @inject NavigationManager Navigation
+@using BookHub.BlazorClient.Components
 
 @code {
     [Parameter] public Guid Id { get; set; }
@@ -155,8 +156,10 @@ else
                     <tr>
                         <td>@loan.UserEmail</td>
                         <td>@loan.LoanDate.ToShortDateString()</td>
-                        <td>@loan.ReturnDate?.ToShortDateString() ?? "-" </td>
-                        <td>@loan.Status</td>
+                        <td>@loan.ReturnDate?.ToShortDateString()</td>
+                        <td>
+                            <LoanStatusBadge Status="@loan.Status" DueDate="@loan.DueDate" />
+                        </td>
                         <td>@loan.PenaltyAmount €</td>
                     </tr>
                 }

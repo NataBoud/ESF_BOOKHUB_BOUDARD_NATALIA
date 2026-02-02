@@ -83,7 +83,7 @@ else
         </div>
     }
 
-    <h3>Emprunts en cours</h3>
+    <h4 class="mt-4">Emprunts en cours</h4>
     <table class="table table-striped">
         <thead>
             <tr>
@@ -116,29 +116,43 @@ else
         </tbody>
     </table>
 
-    <h3>Historique des emprunts</h3>
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Livre</th>
-                <th>Date d'emprunt</th>
-                <th>Date de retour</th>
-                <th>Statut</th>
-                <th>Pénalité</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var loan in loans.Where(l => l.Status != LoanStatus.Active))
-            {
+    <h4 class="mt-4">Historique des emprunts</h4>
+
+    @if (loans.Any(l => l.Status != DTOs.LoanStatus.Active))
+    {
+        <table class="table table-striped">
+            <thead>
                 <tr>
-                    <td>@loan.BookTitle</td>
-                    <td>@loan.LoanDate.ToShortDateString()</td>
-                    <td>@loan.ReturnDate?.ToShortDateString() ?? "-"</td>
-                    <td>@loan.Status</td>
-                    <td>@loan.PenaltyAmount €</td>
+                    <th>Livre</th>
+                    <th>Date d'emprunt</th>
+                    <th>Date de retour</th>
+                    <th>Statut</th>
+                    <th>Pénalité</th>
                 </tr>
-            }
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @foreach (var loan in loans.Where(l => l.Status != DTOs.LoanStatus.Active))
+                {
+                    <tr>
+                        <td>@loan.BookTitle</td>
+                        <td>@loan.LoanDate.ToShortDateString()</td>
+                        <td>@loan.ReturnDate?.ToShortDateString()</td>
+                        <td>
+                            <LoanStatusBadge Status="@loan.Status" DueDate="@loan.DueDate" />
+                        </td>
+                        <td>@loan.PenaltyAmount €</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            Vous n'avez aucun emprunt passé.         
+        </div>
+    }
+
+
 }
 
