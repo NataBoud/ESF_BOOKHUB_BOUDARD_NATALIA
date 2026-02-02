@@ -1,4 +1,5 @@
 using BookHub.LoanService.Domain.Entities;
+using BookHub.Shared.DTOs;
 
 namespace BookHub.LoanService.Domain.Ports;
 
@@ -14,5 +15,9 @@ public interface ILoanRepository
     Task<Loan> AddAsync(Loan loan, CancellationToken cancellationToken = default);
     Task<Loan> UpdateAsync(Loan loan, CancellationToken cancellationToken = default);
     Task<IEnumerable<Loan>> GetByBookIdAsync(Guid bookId, CancellationToken cancellationToken = default);
+    Task<int> CountAllAsync(CancellationToken cancellationToken = default);
+    Task<int> CountActiveAsync(CancellationToken cancellationToken = default);
+    Task<int> CountOverdueAsync(CancellationToken cancellationToken = default);
+    Task<IEnumerable<TopBookDto>> GetTopBorrowedBooksAsync(int limit, CancellationToken cancellationToken = default);
 
 }

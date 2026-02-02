@@ -14,6 +14,7 @@ public interface ILoanService
     Task<LoanDto> CreateLoanAsync(CreateLoanDto dto, CancellationToken cancellationToken = default);
     Task<LoanDto?> ReturnLoanAsync(Guid id, CancellationToken cancellationToken = default);
     Task<IEnumerable<LoanDto>> GetLoansByBookIdAsync(Guid bookId, CancellationToken cancellationToken = default);
+    Task<AdminDashboardDto> GetAdminDashboardAsync(CancellationToken cancellationToken = default);
 }
 
 public class LoanService : ILoanService
@@ -122,6 +123,21 @@ public class LoanService : ILoanService
         return loans.Select(MapToDto);
     }
 
+    public async Task<AdminDashboardDto> GetAdminDashboardAsync(CancellationToken cancellationToken = default)
+    {
+        var totalLoans = await _repository.CountAllAsync(cancellationToken);
+        var activeLoans = await _repository.CountActiveAsync(cancellationToken);
+        var overdueLoans = await _repository.CountOverdueAsync(cancellationToken);
+
+        var topBooks = await _repository.GetTopBorrowedBooksAsync(5, cancellationToken);
+
+        return new AdminDashboardDto(
+            totalLoans,
+            activeLoans,
+            overdueLoans,
+            topBooks
+        );
+    }
 
     private static LoanDto MapToDto(Loan loan) => new(
         loan.Id,

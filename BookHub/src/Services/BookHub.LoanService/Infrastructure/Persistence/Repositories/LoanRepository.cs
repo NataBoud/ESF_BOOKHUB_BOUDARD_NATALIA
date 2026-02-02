@@ -1,6 +1,10 @@
 using BookHub.LoanService.Domain.Entities;
 using BookHub.LoanService.Domain.Ports;
 using Microsoft.EntityFrameworkCore;
+using BookHub.Shared.DTOs;
+
+// Alias pour lever l'ambiguïté
+using DomainLoanStatus = BookHub.LoanService.Domain.Entities.LoanStatus;
 
 namespace BookHub.LoanService.Infrastructure.Persistence.Repositories;
 
@@ -36,7 +40,7 @@ public class LoanRepository : ILoanRepository
     public async Task<IEnumerable<Loan>> GetActiveByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         return await _context.Loans
-            .Where(l => l.UserId == userId && l.Status == LoanStatus.Active)
+            .Where(l => l.UserId == userId && l.Status == DomainLoanStatus.Active)
             .OrderBy(l => l.DueDate)
             .ToListAsync(cancellationToken);
     }
@@ -45,7 +49,7 @@ public class LoanRepository : ILoanRepository
     {
         var now = DateTime.UtcNow;
         return await _context.Loans
-            .Where(l => l.Status == LoanStatus.Active && l.DueDate < now)
+            .Where(l => l.Status == DomainLoanStatus.Active && l.DueDate < now)
             .OrderBy(l => l.DueDate)
             .ToListAsync(cancellationToken);
     }
@@ -53,13 +57,13 @@ public class LoanRepository : ILoanRepository
     public async Task<Loan?> GetActiveByBookIdAsync(Guid bookId, CancellationToken cancellationToken = default)
     {
         return await _context.Loans
-            .FirstOrDefaultAsync(l => l.BookId == bookId && l.Status == LoanStatus.Active, cancellationToken);
+            .FirstOrDefaultAsync(l => l.BookId == bookId && l.Status == DomainLoanStatus.Active, cancellationToken);
     }
 
     public async Task<int> GetActiveLoansCountByUserAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         return await _context.Loans
-            .CountAsync(l => l.UserId == userId && l.Status == LoanStatus.Active, cancellationToken);
+            .CountAsync(l => l.UserId == userId && l.Status == DomainLoanStatus.Active, cancellationToken);
     }
 
     public async Task<Loan> AddAsync(Loan loan, CancellationToken cancellationToken = default)
@@ -82,6 +86,41 @@ public class LoanRepository : ILoanRepository
             .Where(l => l.BookId == bookId)
             .OrderByDescending(l => l.LoanDate)
             .ToListAsync(cancellationToken);
+    }
+
+    public async Task<int> CountAllAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.Loans.CountAsync(cancellationToken);
+    }
+
+    public async Task<int> CountActiveAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.Loans.CountAsync(l => l.Status == DomainLoanStatus.Active, cancellationToken);
+    }
+
+    public async Task<int> CountOverdueAsync(CancellationToken cancellationToken = default)
+    {
+        var now = DateTime.UtcNow;
+        return await _context.Loans.CountAsync(
+            l => l.Status == DomainLoanStatus.Active && l.DueDate < now,
+            cancellationToken);
+    }
+
+  public async Task<IEnumerable<TopBookDto>> GetTopBorrowedBooksAsync(int limit, CancellationToken cancellationToken = default)
+    {
+        var topBooks = _context.Loans
+            .GroupBy(l => new { l.BookId, l.BookTitle })
+            .AsEnumerable() // bascule vers LINQ to Objects
+            .Select(g => new TopBookDto(
+                g.Key.BookId,
+                g.Key.BookTitle,
+                g.Count() // évalué côté client
+            ))
+            .OrderByDescending(b => b.LoanCount)
+            .Take(limit)
+            .ToList(); 
+
+        return topBooks;
     }
 
 }

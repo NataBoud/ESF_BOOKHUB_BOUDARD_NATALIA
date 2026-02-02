@@ -2,7 +2,6 @@ using BookHub.LoanService.Application.Services;
 using BookHub.Shared.DTOs;
 using Microsoft.AspNetCore.Mvc;
 
-
 namespace BookHub.LoanService.Api.Controllers;
 
 [ApiController]
@@ -62,7 +61,7 @@ public class LoansController : ControllerBase
     }
 
 
-     [HttpPut("{id:guid}/return")]
+    [HttpPut("{id:guid}/return")]
     public async Task<ActionResult<LoanDto>> Return(Guid id, CancellationToken cancellationToken)
     {
         var loan = await _loanService.ReturnLoanAsync(id, cancellationToken);
@@ -76,5 +75,14 @@ public class LoansController : ControllerBase
         var loans = await _loanService.GetLoansByBookIdAsync(bookId, cancellationToken);
         return Ok(loans);
     }
+
+    [HttpGet("admin/dashboard")]
+    public async Task<ActionResult<AdminDashboardDto>> GetAdminDashboard(
+        CancellationToken cancellationToken)
+    {
+        var dashboard = await _loanService.GetAdminDashboardAsync(cancellationToken);
+        return Ok(dashboard);
+    }
+
 
 }
