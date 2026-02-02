@@ -12,10 +12,15 @@ public class BookService : IBookService
         _httpClient = httpClient;
     }
 
-    public async Task<IEnumerable<BookDto>> GetAllBooksAsync()
+    public async Task<(IEnumerable<BookDto> Items, int TotalCount)> GetPagedBooksAsync(int page = 1, int pageSize = 10)
     {
-        var response = await _httpClient.GetFromJsonAsync<IEnumerable<BookDto>>("api/books");
-        return response ?? Enumerable.Empty<BookDto>();
+        var response = await _httpClient.GetFromJsonAsync<PagedResult<BookDto>>(
+            $"api/books/paged?page={page}&pageSize={pageSize}"
+        );
+
+        return response == null
+            ? (Enumerable.Empty<BookDto>(), 0)
+            : (response.Items, response.TotalCount);
     }
 
     public async Task<BookDto?> GetBookByIdAsync(Guid id)

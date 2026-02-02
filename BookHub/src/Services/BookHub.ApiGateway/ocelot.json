@@ -35,6 +35,20 @@
             ]
         },
         {
+            "DownstreamPathTemplate": "/api/books/paged",
+            "DownstreamScheme": "http",
+            "DownstreamHostAndPorts": [
+                {
+                    "Host": "catalog-service",
+                    "Port": 8080
+                }
+            ],
+            "UpstreamPathTemplate": "/api/books/paged",
+            "UpstreamHttpMethod": [
+                "GET"
+            ]
+        },
+        {
             "DownstreamPathTemplate": "/api/books/{id}",
             "DownstreamScheme": "http",
             "DownstreamHostAndPorts": [

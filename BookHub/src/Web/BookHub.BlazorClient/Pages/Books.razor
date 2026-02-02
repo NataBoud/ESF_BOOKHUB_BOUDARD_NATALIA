@@ -2,28 +2,36 @@
 @inject IBookService BookService
 @using BookHub.BlazorClient.Components
 
+
 @code {
-    private List<BookDto>? books;
+    private List<BookDto> books = new();
     private bool isLoading = true;
     private string searchTerm = string.Empty;
     private string selectedCategory = string.Empty;
     private List<string> categories = new();
 
-    private IEnumerable<BookDto> filteredBooks => books?
-        .Where(b => string.IsNullOrEmpty(selectedCategory) || b.Category == selectedCategory)
-        ?? Enumerable.Empty<BookDto>();
+    private int currentPage = 1;
+    private int pageSize = 10;
+    private int totalPages = 1;
 
     protected override async Task OnInitializedAsync()
     {
         await LoadBooks();
     }
 
-    private async Task LoadBooks()
+    private async Task LoadBooks(int page = 1)
     {
         isLoading = true;
         try
         {
-            books = (await BookService.GetAllBooksAsync()).ToList();
+            currentPage = page;
+
+            // Appel paginé vers le service
+            var result = await BookService.GetPagedBooksAsync(page, pageSize);
+            books = result.Items.ToList();
+
+            totalPages = (int)Math.Ceiling(result.TotalCount / (double)pageSize);
+
             categories = books.Select(b => b.Category).Distinct().OrderBy(c => c).ToList();
         }
         catch (Exception ex)
@@ -34,6 +42,11 @@
         {
             isLoading = false;
         }
+    }
+
+    private async Task OnPageChanged(int page)
+    {
+        await LoadBooks(page);
     }
 
     private async Task Search()
@@ -47,7 +60,11 @@
         isLoading = true;
         try
         {
-            books = (await BookService.SearchBooksAsync(searchTerm)).ToList();
+            var result = await BookService.SearchBooksAsync(searchTerm);
+            books = result.ToList();
+
+            totalPages = 1; // TODO : pas de pagination api, idéalemet a refaire plus tard
+            currentPage = 1;
         }
         catch (Exception ex)
         {
@@ -102,13 +119,19 @@ else if (books == null || !books.Any())
 }
 else
 {
-    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4">
-        @foreach (var book in filteredBooks)
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4 mb-4">
+        @foreach (var book in books)
         {
             <div class="col">
                 <BookCard Book="book" />
             </div>
         }
     </div>
-}
 
+    @if (totalPages > 1)
+    {
+        <Pagination CurrentPage="currentPage"
+                    TotalPages="totalPages"
+                    OnPageChanged="OnPageChanged" />
+    }
+}

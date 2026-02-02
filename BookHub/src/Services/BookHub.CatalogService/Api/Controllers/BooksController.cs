@@ -15,22 +15,21 @@ public class BooksController : ControllerBase
         _bookService = bookService;
     }
 
-    [HttpGet]
-    public async Task<ActionResult> GetAll(
-        [FromQuery] int page = 1, 
+     // Route pour la pagination
+    [HttpGet("paged")]
+    public async Task<ActionResult<PagedResult<BookDto>>> GetPagedBooks(
+        [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
         CancellationToken cancellationToken = default)
     {
         var (items, totalCount) = await _bookService.GetPagedBooksAsync(page, pageSize, cancellationToken);
 
-        // Retourner un objet avec les données et le total pour la pagination côté client
-        return Ok(new
-        {
-            Items = items,
-            TotalCount = totalCount,
-            CurrentPage = page,
-            PageSize = pageSize
-        });
+        var result = new PagedResult<BookDto>(
+            Items: items,
+            TotalCount: totalCount
+        );
+
+        return Ok(result);
     }
 
     [HttpGet("{id:guid}")]
